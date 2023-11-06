@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react'
-import styles from './page.module.scss'
+import s from './page.module.scss'
 import Grid from '../../components/views/grid/grid.jsx'
 import { setDataDB, onDataDB } from '@/firebase/realtimeDB'
 
@@ -12,21 +12,21 @@ export default function Play() {
   const [winner, setWinner] = useState('')
   const [dateFinish, setDateFinish] = useState('')
   const [userName, setUserName] = useState('')
+  const [editName, setEditName] = useState(false)
 
   const onChangeColor = (e) => {
     setUserColor(e.target.value)
     localStorage.setItem('colorwar-userColor', e.target.value)
   }
 
-  const handleUserClick = async (x, y) => {
-    const cell = data?.cells.find((cell) => cell.x === x && cell.y === y)
+  const handleUserClick = async (cell, index) => {
     const dateNow = new Date().getTime()
     if (dateNow < data?.config?.dateFinish) {
       if (cell) {
         cell.color = userColor
         cell.userId = userId
         cell.updatedAt = new Date().getTime()
-        await setDataDB('/1', data)
+        await setDataDB(`/1/cells/${index}`, cell)
       }
     } else {
       setGameFinish(true)
@@ -34,19 +34,24 @@ export default function Play() {
     }
   }
 
-  const handleOnChangeName = (e) => {
+  const handleOnChangeName = () => {
     if (!data) return
     if (!data.users) data.users = []
-    const user = data?.users?.find((user) => user.userId === userId)
-    if (user) {
-      user.name = e.target.value
-      setDataDB('/1', data)
-    } else {
-      data?.users?.push({
+    const userIndex = data?.users?.findIndex((user) => user.userId === userId)
+    if (userIndex !== -1) {
+      setDataDB(`/1/users/${userIndex}`, {
         userId,
-        name: e.target.value,
+        name: userName,
       })
-      setDataDB('/1', data)
+      setEditName(false)
+    } else {
+      const users = data?.users
+      users.push({
+        userId,
+        name: userName,
+      })
+      setDataDB('/1/users', users)
+      setEditName(false)
     }
   }
 
@@ -119,19 +124,29 @@ export default function Play() {
   }, [])
 
   return (
-    <main className={styles.main}>
+    <main className={s.main}>
       <h1>ColorWar</h1>
       <div>
         <p>Escribe tu nombre</p>
-        <input type='text' value={userName} onChange={handleOnChangeName} />
+        {!editName ? (
+          <div className={s.nameContainer}>
+            <p>{userName}</p>
+            <button onClick={()=>setEditName(true)}>Edit</button>
+          </div>
+        ) : (
+          <div className={s.nameContainer}>
+            <input type='text' value={userName} onChange={(e) => setUserName(e.target.value)} />
+            <button onClick={handleOnChangeName}>Save</button>
+          </div>
+        )}
       </div>
       {!gameFinish && dateFinish && <p>El juego termina a las {String(dateFinish)}</p>}
       <input type='color' value={userColor} onChange={onChangeColor} />
       {gameFinish ? (
-       <>
-         <p className={styles.text}>El juego ha terminado el ganador fue: {winner} </p>
-         <div></div>
-       </>
+        <>
+          <p className={s.text}>El juego ha terminado el ganador fue: {winner} </p>
+          <div></div>
+        </>
       ) : (
         <Grid data={data} userId={userId} onUserClick={handleUserClick} />
       )}

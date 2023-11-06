@@ -1,46 +1,41 @@
 'use client'
-import React, { useState, useEffect } from 'react'
-import { setDataDB, onDataDB } from '@/firebase/realtimeDB'
+import React from 'react'
+import { setDataDB, getDataDB } from '@/firebase/realtimeDB'
 import s from './page.module.scss'
 
 const Admin = () => {
-  const [data, setData] = useState(null)
-  const qtyHorizontal = 6
-  const qtyVertical = 8
-
-  const setDataInitial = () => {
+  const setDataInitial = async () => {
+    const data = await getDataDB('/gameConfig')
+    const timeNowWithoutSeconds = new Date().getTime() - (new Date().getTime() % 1000)
     const dataInitial = {
       cells: [],
       config: {
-        qtyHorizontal,
-        qtyVertical,
-        dateFinish: new Date().getTime() + 1000 * 60 * 5,
+        qtyHorizontal: data?.qtyHorizontal,
+        qtyVertical: data?.qtyVertical,
+        dateFinish: timeNowWithoutSeconds + 1000 * 60 * (data?.minutesToStart ?? 5),
       },
     }
 
-    for (let i = 0; i < qtyHorizontal; i++) {
-      for (let j = 0; j < qtyVertical; j++) {
+    for (let i = 0; i < data?.qtyVertical; i++) {
+      for (let j = 0; j < data?.qtyHorizontal; j++) {
         dataInitial.cells.push({
-          x: i,
-          y: j,
+          x: j,
+          y: i,
           color: '#fff',
           userId: '',
           updatedAt: new Date().getTime(),
         })
       }
     }
-
     setDataDB('/1', dataInitial)
   }
-
-  useEffect(() => {
-    
-  }, [])
 
   return (
     <div className={s.container}>
       <h1>Panel de administración</h1>
-      <button onClick={setDataInitial}>setDataInitial</button>
+      <button style={{ width: '150px', margin: 'auto' }} onClick={setDataInitial}>
+        Configurar nuevo juego
+      </button>
     </div>
   )
 }

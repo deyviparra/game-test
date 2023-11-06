@@ -3,9 +3,8 @@ import React, { useEffect, useState } from 'react'
 import s from './grid.module.scss'
 
 const Grid = ({ onUserClick, userId, data }) => {
-  const horizontalArr = Array(data?.config?.qtyHorizontal).fill(null)
-  const verticalArr = Array(data?.config?.qtyVertical).fill(null)
   const [userCells, setUserCells] = useState([])
+  const [styleConfig, setStyleConfig] = useState({})
   const BORDER_COLOR = 'black'
   const BORDER_COLOR_USER = '#67EBFA'
 
@@ -24,7 +23,7 @@ const Grid = ({ onUserClick, userId, data }) => {
     return { bt, bb, bl, br }
   }
 
-  const ColorCell = ({ x, y }) => {
+  const ColorCell = ({ x, y, index }) => {
     const cell = data?.cells.find((cell) => cell.x === x && cell.y === y)
     const color = cell?.color || BORDER_COLOR_USER
     const { bt, bb, bl, br } =
@@ -37,7 +36,7 @@ const Grid = ({ onUserClick, userId, data }) => {
         data-y={y}
         className={s.cell}
         onClick={() => {
-          onUserClick(x, y)
+          onUserClick(cell, index)
         }}
         style={{
           backgroundColor: color,
@@ -75,19 +74,16 @@ const Grid = ({ onUserClick, userId, data }) => {
       setUserCells(userCellsArr)
       paintBorders()
       paintCells()
+      setStyleConfig({
+        gridTemplateColumns: `repeat(${data?.config?.qtyHorizontal}, 1fr)`,
+      })
     }
   }, [data])
 
   return (
-    <div className={s.container}>
-      {verticalArr.map((_, indexY) => {
-        return (
-          <div key={indexY} className={s.row}>
-            {horizontalArr.map((_, indexX) => {
-              return <ColorCell x={indexX} y={indexY} key={indexX} />
-            })}
-          </div>
-        )
+    <div style={styleConfig} className={s.container}>
+      {data?.cells?.map((cell, index) => {
+        return <ColorCell index={index} x={cell.x} y={cell.y} key={index} />
       })}
     </div>
   )
